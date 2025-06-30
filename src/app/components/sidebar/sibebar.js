@@ -39,7 +39,7 @@ export default function Sidebar() {
               <Link
                 href="#"
                 key={item.label}
-                className="flex items-center space-x-3 text-white hover:text-red-700 hover:bg-gray-100 px-4 py-2"
+                className="flex items-center space-x-3 text-white hover:text-red-700 hover:bg-gray-900 px-4 py-2"
               >
                 <span>{item.icon}</span>
                 {isOpen && <span>{item.label}</span>}
@@ -47,13 +47,6 @@ export default function Sidebar() {
             ))}
           </nav>
         </div>
-          
-        {/* Footer Avatars
-        <div className="p-4 flex space-x-2 items-center">
-          <div className="w-8 h-8 bg-blue-500 rounded-full" />
-          <div className="w-8 h-8 bg-red-500 rounded-full" />
-          <div className="w-8 h-8 bg-green-500 rounded-full" />
-        </div> */}
       </div>
     </div>
   );
