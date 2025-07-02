@@ -1,5 +1,6 @@
 "use client";
-import ExcelUp from "./components/overview/overview";
+import ExcelUploader from "./components/overview/excelUpload";
+// import DuplicateTable from "./components/overview/duplicateTable";
 import Sidebar from "./components/sidebar/sibebar";
 
 export default function Home() {
@@ -10,12 +11,14 @@ export default function Home() {
       </div>
 
       <main className="ml-64 flex-1 p-6">
-        {localStorage.getItem('api-token') ? (
+        {/* {localStorage.getItem('api-token') ? (
           <h1 className="text-2xl font-bold text-white mb-4">Welcome back! {localStorage.getItem('api-token')}</h1>
         ) : (
           <h1 className="text-2xl font-bold text-white mb-4">Please log in</h1>
-        )}
-        <ExcelUp />
+        )} */}
+        
+        <ExcelUploader/>
+        {/* <DuplicateTable /> */}
       </main>
     </div>
   );
