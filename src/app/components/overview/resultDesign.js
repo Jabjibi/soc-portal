@@ -3,7 +3,6 @@ import React from "react";
 export default function ResultDisplay({
   editedFileUrl,
   response,
-  checkResponse,
   checkLoading
 }) {
   return (
@@ -20,26 +19,6 @@ export default function ResultDisplay({
             <div className="ml-3">
               <p className="text-sm font-medium text-blue-300">กำลังตรวจสอบไฟล์กับ n8n...</p>
             </div>
-          </div>
-        </div>
-      )}
-
-      {checkResponse && (
-        <div className="bg-blue-900/50 border border-blue-500/50 rounded-xl p-4 backdrop-blur-sm">
-          <div className="flex items-center mb-3">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-400 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <h4 className="text-lg font-semibold text-blue-300 ml-3">ผลการตรวจสอบจาก n8n Check API</h4>
-          </div>
-          <div className="bg-gray-900/70 p-3 rounded-lg border border-gray-600">
-            <pre className="text-xs text-blue-200 overflow-auto">
-              {JSON.stringify(checkResponse, null, 2)}
-            </pre>
           </div>
         </div>
       )}
