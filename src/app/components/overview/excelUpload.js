@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
+
+import PullData from "./pullDatabase.js";
+import { readExcelFile, findDuplicateRows } from "../../utils/excelUtils";
 import FileUploadSection from "./fileUpSection";
 import ExcelPreview from "./excelPreview";
 import ActionButtons from "./actionButton";
 import ResultDisplay from "./resultDesign";
-import PullData from "./pullDatabase.js";
-import { readExcelFile, findDuplicateRows } from "../../utils/excelUtils";
-
 
 export default function ExcelUploader() {
   // File states
@@ -269,13 +269,6 @@ export default function ExcelUploader() {
           <div className="bg-gray-900 rounded-xl p-1">
             <PullData />
           </div>
-
-          <ResultDisplay
-            editedFileUrl={editedFileUrl}
-            response={response}
-            checkResponse={checkResponse}
-            checkLoading={checkLoading}
-          />
         </div>
       </div>
     </div>

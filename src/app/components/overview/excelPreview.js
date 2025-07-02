@@ -1,11 +1,16 @@
 import React from "react";
+import ResultDisplay from "./resultDesign";
 
 export default function ExcelPreview({
   headers,
   excelData,
   duplicateRows,
   onHidePreview,
-  onExportCleanedData
+  onExportCleanedData,
+   checkResponse,
+  editedFileUrl,
+  response,
+  checkLoading
 }) {
   console.log('ExcelPreview - duplicateRows:', duplicateRows.size); // Debug line
   
@@ -37,6 +42,15 @@ export default function ExcelPreview({
             ซ่อน
           </button>
         </div>
+      </div>
+
+      <div>
+        <ResultDisplay
+            editedFileUrl={editedFileUrl}
+            response={response}
+            checkResponse={checkResponse}
+            checkLoading={checkLoading}
+          />
       </div>
       
       <div className="overflow-x-auto max-h-96 rounded-lg border border-gray-600">
