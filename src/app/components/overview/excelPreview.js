@@ -7,7 +7,7 @@ export default function ExcelPreview({
   duplicateRows,
   onHidePreview,
   onExportCleanedData,
-   checkResponse,
+  checkResponse,
   editedFileUrl,
   response,
   checkLoading

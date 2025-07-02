@@ -269,6 +269,13 @@ export default function ExcelUploader() {
           <div className="bg-gray-900 rounded-xl p-1">
             <PullData />
           </div>
+
+          <ResultDisplay
+            editedFileUrl={editedFileUrl}
+            response={response}
+            checkResponse={checkResponse}
+            checkLoading={checkLoading}
+          />
         </div>
       </div>
     </div>
