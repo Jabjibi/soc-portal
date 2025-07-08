@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FiEye, FiSlash } from "react-icons/fi";
+import { FiEye, FiSlash, FiDownload } from "react-icons/fi";
+import * as XLSX from 'xlsx';
 
 export default function PullDatabase() {
   const [data, setData] = useState([]);
@@ -11,6 +12,8 @@ export default function PullDatabase() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [selectedColumns, setSelectedColumns] = useState(new Set());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,6 +56,93 @@ export default function PullDatabase() {
   };
 
   const isColumnVisible = (columnKey) => !hiddenColumns.has(columnKey);
+
+  // Excel Download Functions
+  const toggleDownloadColumn = (columnKey) => {
+    setSelectedColumns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(columnKey)) {
+        newSet.delete(columnKey);
+      } else {
+        newSet.add(columnKey);
+      }
+      return newSet;
+    });
+  };
+
+  const downloadExcel = () => {
+    if (selectedColumns.size === 0) {
+      alert('กรุณาเลือกคอลัมน์ที่ต้องการดาวน์โหลด');
+      return;
+    }
+
+    try {
+      // เตรียมข้อมูลสำหรับ Excel
+      const columns = Array.from(selectedColumns);
+      const excelData = filteredData.map(row => {
+        const newRow = {};
+        columns.forEach(col => {
+          newRow[col] = row[col];
+        });
+        return newRow;
+      });
+
+      // สร้าง workbook และ worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // ปรับขนาดคอลัมน์อัตโนมัติ
+      const colWidths = columns.map(col => {
+        const maxLength = Math.max(
+          col.length, // ความยาวของ header
+          ...excelData.map(row => String(row[col] || '').length)
+        );
+        return { wch: Math.min(Math.max(maxLength + 2, 10), 50) };
+      });
+      ws['!cols'] = colWidths;
+
+      // เพิ่ม styling สำหรับ header
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const headerCell = XLSX.utils.encode_cell({ r: 0, c: col });
+        if (!ws[headerCell]) continue;
+        
+        ws[headerCell].s = {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "DC2626" } }, // สีแดง
+          alignment: { horizontal: "center", vertical: "center" }
+        };
+      }
+
+      // เพิ่ม worksheet เข้า workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Database Export");
+
+      // สร้างไฟล์และดาวน์โหลด
+      const fileName = `database_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error('Error creating Excel file:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างไฟล์ Excel');
+    }
+  };
+
+  const openDownloadModal = () => {
+    // Pre-select common columns if they exist
+    const commonColumns = ['username', 'password', 'email'];
+    const availableColumns = data.length > 0 ? Object.keys(data[0]) : [];
+    const preSelected = new Set();
+    
+    commonColumns.forEach(col => {
+      if (availableColumns.includes(col)) {
+        preSelected.add(col);
+      }
+    });
+    
+    setSelectedColumns(preSelected);
+    setShowDownloadModal(true);
+  };
 
   // Filter data based on search term
   const filteredData = data.filter(row =>
@@ -146,17 +236,138 @@ export default function PullDatabase() {
               </h1>
               <p className="mt-3 text-gray-300 text-lg">แสดงข้อมูลทั้งหมด <span className="text-red-400 font-semibold">{data.length}</span> รายการ</p>
             </div>
-            <button 
-              onClick={() => window.location.reload()}
-              className="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 flex items-center gap-3 font-semibold shadow-lg shadow-red-500/30 transform hover:scale-105"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              รีเฟรช
-            </button>
+            <div className="flex items-center gap-3">
+              {/* Excel Download Button */}
+              <button 
+                onClick={openDownloadModal}
+                className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-300 flex items-center gap-3 font-semibold shadow-lg shadow-green-500/30 transform hover:scale-105"
+              >
+                <FiDownload className="w-5 h-5" />
+                ดาวน์โหลด Excel
+              </button>
+              {/* Refresh Button */}
+              <button 
+                onClick={() => window.location.reload()}
+                className="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 flex items-center gap-3 font-semibold shadow-lg shadow-red-500/30 transform hover:scale-105"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                รีเฟรช
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Excel Download Modal */}
+        {showDownloadModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-gradient-to-br from-gray-900/95 to-black/95 border border-red-500/30 rounded-2xl p-8 max-w-2xl w-full mx-4 shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-red-300 flex items-center gap-3">
+                  <FiDownload className="w-6 h-6" />
+                  เลือกคอลัมน์สำหรับดาวน์โหลด Excel
+                </h3>
+                <button
+                  onClick={() => setShowDownloadModal(false)}
+                  className="text-gray-400 hover:text-red-400 transition-colors p-2"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-gray-300 mb-4">เลือกคอลัมน์ที่ต้องการรวมในไฟล์ Excel:</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                  {columns.map((column) => (
+                    <label
+                      key={column}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-300 ${
+                        selectedColumns.has(column)
+                          ? 'bg-gradient-to-r from-green-600/20 to-green-500/10 border border-green-500/40 text-green-200'
+                          : 'bg-gray-800/50 border border-gray-600/40 text-gray-300 hover:bg-gray-700/50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedColumns.has(column)}
+                        onChange={() => toggleDownloadColumn(column)}
+                        className="w-4 h-4 text-green-600 bg-gray-700 border-gray-600 rounded focus:ring-green-500"
+                      />
+                      <span className="text-sm font-medium truncate" title={column}>
+                        {column}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-black/20 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-400">
+                  เลือกแล้ว: <span className="text-green-400 font-semibold">{selectedColumns.size}</span> คอลัมน์
+                  {selectedColumns.size > 0 && (
+                    <>
+                      <br />
+                      <span className="text-green-300">
+                        {Array.from(selectedColumns).join(', ')}
+                      </span>
+                    </>
+                  )}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    // Quick select username and password
+                    const quickSelect = new Set();
+                    if (columns.includes('username')) quickSelect.add('username');
+                    if (columns.includes('password')) quickSelect.add('password');
+                    if (columns.includes('email')) quickSelect.add('email');
+                    setSelectedColumns(quickSelect);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 text-sm"
+                >
+                  เลือก Username & Password
+                </button>
+                
+                <button
+                  onClick={() => setSelectedColumns(new Set(columns))}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-300 text-sm"
+                >
+                  เลือกทั้งหมด
+                </button>
+                
+                <button
+                  onClick={() => setSelectedColumns(new Set())}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-300 text-sm"
+                >
+                  ล้างทั้งหมด
+                </button>
+                
+                <div className="flex-1"></div>
+                
+                <button
+                  onClick={() => setShowDownloadModal(false)}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-300 font-semibold"
+                >
+                  ยกเลิก
+                </button>
+                
+                <button
+                  onClick={downloadExcel}
+                  disabled={selectedColumns.size === 0}
+                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-300 font-semibold shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <FiDownload className="w-5 h-5" />
+                  ดาวน์โหลด ({filteredData.length} รายการ)
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Search and Controls */}
         <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">

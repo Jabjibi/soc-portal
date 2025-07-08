@@ -1,4 +1,5 @@
 import React from "react";
+import * as XLSX from 'xlsx';
 
 export default function ResultDisplay({
   checkResponse,
@@ -6,6 +7,56 @@ export default function ResultDisplay({
   response,
   checkLoading,
 }) {
+  // Function to handle file download
+  const handleDownload = (url, filename = "downloaded_file") => {
+    if (!url) return;
+
+    // Create a temporary anchor element
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Function to download data as Excel file
+  const downloadAsExcel = (data, filename = "report.xlsx") => {
+    try {
+      if (!data || data.length === 0) {
+        alert('ไม่มีข้อมูลสำหรับดาวน์โหลด');
+        return;
+      }
+
+      // เตรียมข้อมูลสำหรับ Excel
+      const excelData = data.map((item, index) => ({
+        '#': index + 1,
+        'Email': item.email || '',
+        'Row': item.row || '',
+        'Password': item.data?.["Password"] || '',
+        'Source': item.data?.["Source Name"] || '',
+        'Scan Date': item.data?.["Scan Date (Asia/Bangkok  GMT+07:00)"] || ''
+      }));
+
+      // สร้าง workbook และ worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // ปรับขนาดคอลัมน์อัตโนมัติ
+      const columnHeaders = ['#', 'Email', 'Row', 'Password', 'Source', 'Scan Date'];
+      ws['!cols'] = columnHeaders.map(header => ({ wch: 15 }));
+
+      // เพิ่ม worksheet เข้า workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Check Results");
+
+      // สร้างไฟล์และดาวน์โหลด
+      XLSX.writeFile(wb, filename);
+    } catch (error) {
+      console.error('Error creating Excel file:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างไฟล์ Excel');
+    }
+  };
+
   return (
     <>
       {/* Check Response from excelCheck API */}
@@ -38,11 +89,38 @@ export default function ResultDisplay({
 
       {checkResponse && (
         <div className="bg-black border border-neutral-600/50 rounded-xl p-4 backdrop-blur-sm">
-          <div className="flex items-center mb-3">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-400 rounded-full flex items-center justify-center">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-rose-400 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <h4 className="text-lg font-semibold text-neutral-200 ml-3">
+                ผลการตรวจสอบจาก n8n Check API
+              </h4>
+            </div>
+
+            {/* Download Button for Check Response */}
+            {checkResponse.uniques && checkResponse.uniques.length > 0 && (
+              <button
+                onClick={() => downloadAsExcel(checkResponse.uniques, 'check_results.xlsx')}
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50"
+              >
                 <svg
-                  className="w-4 h-4 text-white"
+                  className="w-4 h-4 mr-2"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -51,14 +129,12 @@ export default function ResultDisplay({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-              </div>
-            </div>
-            <h4 className="text-lg font-semibold text-neutral-200 ml-3">
-              ผลการตรวจสอบจาก n8n Check API
-            </h4>
+                Download Excel
+              </button>
+            )}
           </div>
 
           {/* ตารางสำหรับข้อมูลที่ไม่ซ้ำ */}
@@ -141,49 +217,12 @@ export default function ResultDisplay({
               ส่งไฟล์สำเร็จ!
             </h3>
           </div>
-          <a
-            href={editedFileUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-400 text-white rounded-lg hover:from-rose-600 hover:to-rose-500 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-opacity-50"
-          >
-            <svg
-              className="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            ดาวน์โหลดไฟล์ที่แก้ไขแล้ว
-          </a>
         </div>
       )}
 
       {/* Debug Response */}
       {response && !editedFileUrl && (
-        <div className="bg-neutral-800/50 border border-neutral-600/50 rounded-xl p-4 backdrop-blur-sm">
-          <h4 className="text-sm font-medium text-neutral-300 mb-3 flex items-center">
-            <svg
-              className="w-4 h-4 mr-2 text-rose-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            การตอบกลับจาก Server:
-          </h4>
+        <div className="bg-white-800/50 border border-neutral-600/50 rounded-xl p-4 backdrop-blur-sm">
           <div className="bg-black/40 p-4 rounded-lg border border-neutral-700/50">
             <pre className="text-xs text-neutral-400 overflow-auto max-h-48">
               {JSON.stringify(response, null, 2)}
